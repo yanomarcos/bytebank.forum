@@ -6,6 +6,7 @@ using Microsoft.AspNet.Identity.EntityFramework;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
+using System;
 
 namespace ByteBank.Forum.Controllers
 {
@@ -38,24 +39,32 @@ namespace ByteBank.Forum.Controllers
         {
             if (ModelState.IsValid)
             {
-                var dbContext = new IdentityDbContext<UsuarioAplicacao>("DefaultConnection");
-                var userStore = new UserStore<UsuarioAplicacao>(dbContext);
-                var userManager = new UserManager<UsuarioAplicacao>(userStore);
-
                 var novoUsuario = new UsuarioAplicacao();
 
                 novoUsuario.Email = modelo.Email;
                 novoUsuario.UserName = modelo.UserName;
                 novoUsuario.NomeCompleto = modelo.NomeCompleto;
 
-                await UserManager.CreateAsync(novoUsuario, modelo.Senha);
+                var resultado = await UserManager.CreateAsync(novoUsuario, modelo.Senha);
 
-                // Podemos incluir o usuário
-                return RedirectToAction("Index", "Home");
+                if (resultado.Succeeded)
+                {
+                    return RedirectToAction("Index", "Home");
+                }
+                else
+                {
+                    AdicionaErros(resultado);
+                }
             }
 
             // Alguma coisa de errado aconteceu!
             return View(modelo);
+        }
+
+        private void AdicionaErros(IdentityResult resultado)
+        {
+            foreach (var erro in resultado.Errors)
+                ModelState.AddModelError("", erro);
         }
     }
 }
